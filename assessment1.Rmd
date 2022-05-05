@@ -1,0 +1,28 @@
+---
+title: "Assesment 1"
+author: "Joty Sekhon s4549414"
+date: '2022-05-02'
+output: html_document
+---
+
+# What is RMarkdown
+## RMarkdown **editing** 
+R Markdown is a simple to type plain text format for creating high quality dynamic documents and reports with R. R Markdown uses narrative text and code to produce elegant formatted output such as slideshows, pdfs, html documents and much more. (https://rmarkdown.studio.com/lesson-8.html)
+
+``` {r}
+#load tidyverse package
+library(tidyverse)
+
+#create fastfood dataframe
+fastfood<-read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-09-04/fastfood_calories.csv")
+``` 
+
+``` {r}
+# Display the first 10 rows of the data set fastfood
+knitr::kable(head(fastfood, 10), "pipe")
+```      
+
+``` {r}
+# Display the first 10 rows of the data set plus the first 5 variables
+knitr::kable(head(fastfood[, 1:5],10, "pipe")) #pipe function is used to format the table
+```   
