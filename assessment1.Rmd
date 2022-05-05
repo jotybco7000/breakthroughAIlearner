@@ -25,4 +25,4 @@ knitr::kable(head(fastfood, 10), "pipe")
 ``` {r}
 # Display the first 10 rows of the data set plus the first 5 variables
 knitr::kable(head(fastfood[, 1:5],10, "pipe")) #pipe function is used to format the table
-```   
+```    
