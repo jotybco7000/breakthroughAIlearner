@@ -1,0 +1,85 @@
+---
+title: "Twitter Ukraine"
+author: "Joty Sekhon"
+date: "07/05/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(rtweet)
+```
+
+## Data import
+
+#collect tweets about coffee
+
+```{r}
+
+ukraine_tweets<-search_tweets(
+  q="ukraine",
+  n=35,
+  include_rts = FALSE,
+  lang="en",
+  retryonratelimit = TRUE
+)
+
+```
+
+Cleaner version:
+
+```{r}
+#look at first 6 obs
+ukraine_tweets%>%
+  head()
+
+#look at structure
+ukraine_tweets%>%
+  str()
+
+  
+ukraine_short<-ukraine_tweets%>%
+  select(user_id, screen_name, created_at, text, favourites_count, retweet_count)
+
+ukraine_short%>%write_csv("ukraine_7_05_2022.csv")
+ukraine_tweets<-read_csv("ukraine_7_05_2022.csv")
+
+```
+
+### Explore frequency of tweets
+
+
+```{r}
+ts_plot(ukraine_tweets, "hours") +
+  labs(x = NULL, y = NULL,
+       title = "Frequency of tweets with ukraine",
+       subtitle = paste0(format(min(ukraine_tweets$created_at), "%d %B %Y"), " to ", format(max(ukraine_tweets$created_at),"%d %B %Y")),
+       caption = "Ukraine tweets Data collected from Twitter") +
+  theme_minimal()
+```
+
+### Top tweeting location
+Most Twitter users turn off their location in their privacy settings but those that don’t add valuable location information to their tweets. We can count unique values of the “place_full_name” variable to obtain the most frequent tweet location for the search term ukraine.
+
+
+```{r}
+ukraine_tweets %>% 
+  filter(!is.na(place_full_name)) %>% 
+  count(place_full_name, sort = TRUE) %>% 
+  top_n(10)
+```
+
+
+### Most retweeted tweet
+
+#`retweet_count` variable shows retweeting. We sort all the tweets in descending order by the size of the “retweet_count”, top_n the first 20 rows and print the date, handle, text and retweet count.
+
+```{r}
+ukraine_tweets %>% 
+  arrange(-retweet_count) %>%
+  top_n(20, retweet_count) %>% 
+  select(created_at, screen_name, text, retweet_count)
+```
+
