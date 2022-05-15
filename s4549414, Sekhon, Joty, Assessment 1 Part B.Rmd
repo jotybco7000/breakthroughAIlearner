@@ -1,0 +1,145 @@
+---
+title: "Assesment 1"
+author: "Joty Sekhon s4549414"
+date: '2022-05-02'
+output: html_document
+---
+
+# What is RMarkdown
+## RMarkdown **editing** 
+R Markdown is a simple to type plain text format for creating high quality dynamic documents and reports with R. R Markdown uses narrative text and code to produce elegant formatted output such as slideshows, pdfs, html documents and much more. (https://rmarkdown.studio.com/lesson-8.html)
+
+``` {r}
+#load tidyverse package
+library(tidyverse)
+install.packages("knitr")
+library(knitr)
+#create fastfood dataframe
+fastfood<-read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-09-04/fastfood_calories.csv")
+``` 
+
+``` {r}
+# Display the first 10 rows of the data set fastfood
+knitr::kable(head(fastfood, 10), "pipe")
+```      
+
+``` {r}
+# Display the first 10 rows of the data set plus the first 5 variables
+knitr::kable(head(fastfood[, 1:5],10, "pipe")) #pipe function is used to format the table
+```    
+
+### Part B
+
+``` {r}
+# Display the observations that has more than 1000 calories
+fastfood %>%
+  filter(calories> 1000) %>%
+  print()
+```
+
+``` {r}
+# Arrange and save observation in descending order with more than 40 in total_fat & more than 80 in total_carb
+dont_eat_this<- fastfood %>%
+  filter(total_fat> 40 & total_carb> 80) %>%
+  arrange(desc(total_fat))
+```
+
+``` {r}
+#create new variable heavy_food in initial dataset using case_when()
+fastfood <- fastfood %>%
+  mutate(heavy_food = case_when (calories > 500 ~ 'heavy'
+                                 ,calories < 250 ~ 'low'
+                                 ,TRUE ~ 'average'))
+```
+
+```{r}
+#count the number of observations in each created category
+fastfood%>%
+  count(heavy_food, wt= NULL, sort= TRUE, name= "observations") %>%
+  print()
+```
+
+```{r}
+#install & load skimr package
+install.packages("skimr")
+library(skimr)
+# Display the types of variables in the dataset
+skim(fastfood)
+```
+
+``` {r}
+# Show the number of observation for each restaurant in desc order
+fastfood %>%
+  count(restaurant, wt= NULL , sort=TRUE, name= "observations") %>%
+  print()
+```
+
+```{r}
+# Show the number of distinct items 
+n_distinct(fastfood$item)
+```
+
+``` {r}
+# Display the average number of calories for each restaurant
+fastfood %>%
+  group_by(restaurant) %>%
+  summarise(average_calories=mean(calories, trim= 0, na.rm= FALSE)) %>%
+  ungroup() %>%
+  print()
+```
+
+``` {r}
+# Add variable to the dataset which calculates average cal for each restaurant
+fastfood <- fastfood %>%
+  group_by(restaurant) %>%
+  mutate(average_calories= mean(calories)) %>%
+  ungroup()
+
+# calculates max fat for each restaurant
+fastfood <- fastfood %>%
+  group_by(restaurant) %>%
+  mutate(max_fat = max(total_fat)) %>%
+  ungroup()
+
+# calculates min cholestrol for each restaurant
+fastfood <- fastfood %>%
+  group_by(restaurant) %>%
+  mutate(min_cholestrol = min(cholesterol)) %>%
+  ungroup()
+```
+
+```{r}
+# Display the data vis of total fat per each type of restaurant
+fastfood %>% 
+  group_by(restaurant) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = restaurant, y = total_fat)) +
+  geom_col() +
+  labs(x="Names of Restaurant", y="Total Fat", title="Data Vis ", caption = "Image 1:Bar Graph")
+
+# Write a narration 
+Well there are two variables which is total fat and the type of restaurant. 
+We need to identify whether the variables mentioned are dicrete or continious as in the ggplot2 cheat sheet.
+Thus using the bar chart to better understand the differances between each restaurant.
+```
+
+``` {r}
+# Add a variable to the dataset, which calculates the sum of cholesterol and sodium
+fastfood <- fastfood %>%
+  mutate(cholestrol_sodium = rowSums(fastfood[ , c("cholesterol", "sodium")])
+```
+
+``` {r}
+# Renove salad from fastfood dataset
+fastfood$salad <- NULL
+```
+
+``` {r}
+# Using McDonald observations plot sugar variable against protein with geom_point()
+fastfood %>% 
+  select(restaurant, sugar, protein) %>% 
+  filter(restaurant=="Mcdonalds") %>% 
+  ggplot(aes(sugar,protein)) +
+  geom_point(colour = "green") +
+  labs(x="Sugar", y="Protein", title = "Data Vis Mcdonalds", caption = "Image 2:Point Graph")
+```
