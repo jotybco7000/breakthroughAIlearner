@@ -7,9 +7,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 library(tidyverse)
 library(rtweet)
+library (knitr)
+
 ```
 
 ## Data import
@@ -82,4 +83,131 @@ ukraine_tweets %>%
   top_n(20, retweet_count) %>% 
   select(created_at, screen_name, text, retweet_count)
 ```
+
+# Part 2
+
+``` {r}
+# Present the first 10 tweets from your dataset using kable()
+ukraine_tweets %>%
+  head(10) %>%
+  kable()
+```
+
+```{r}
+# Visualise the frequency of your tweets 
+ts_plot(ukraine_tweets, "hours") +
+  labs(x = NULL, y = NULL,
+       title = "Frequency of tweets with Ukraine",
+       subtitle = paste0(format(min(ukraine_tweets$created_at), "%d %B %Y"), "to",
+                         format(max(ukraine_tweets$created_at), "%d %B %Y")),
+       caption = "Data collected on search term ukraine from Twitter's REST API via rtweet") +
+  theme_minimal()
+```
+
+``` {r}
+# Identify top tweeting locations and present the first 10
+ukraine_tweets %>% 
+  filter(!is.na(place_full_name)) %>% 
+  count(place_full_name, sort = TRUE) %>% 
+  top_n(10)%>%
+  kable()
+# Identifies the most popular location tweeting about ukraine on the date the dataset was created.
+```
+
+``` {r}
+#Identify the most retweeted tweets and present top 20
+ukraine_tweets %>% 
+  arrange(-retweet_count) %>%
+  top_n(20, retweet_count) %>% 
+  select(created_at, screen_name, text, retweet_count) %>%
+  kable()
+
+# This looks at the top 20 search terms with ukraine in it from the date the search was commenced on 06-05-2022.
+# It includes the screen name of the tweeter and the retweet count in descending order and the twitter text the user posted.
+```
+
+``` {r}
+# Identify the most liked tweets and present the first 15.
+ukraine_tweets %>% 
+  arrange(-favourites_count) %>%
+  top_n(15, favourites_count) %>% 
+  select(created_at, screen_name, text, favourites_count) %>%
+  kable()
+
+# Takes the top 15 tweets from the created dataset and shows it in descending order.
+# Shows which tweets gained the most likes on the day the dataset was created 06/05/2022.
+```
+
+``` {r}
+# Identify top tweeters in your dataset and present the first 5
+ukraine_tweets %>% 
+  count(screen_name, sort = TRUE) %>%
+  top_n(5) %>%
+  mutate(screen_name = paste0("@", screen_name)) %>%
+  kable()
+# This shows us the top 5 tweeters in our created dataset
+# To identify the most active tweeters we use the “screen_name” variable to tot up the number of tweets by Twitter handle. Than can then add back the @ symbol using the paste0() function.
+```
+
+``` {r}
+# Identify top emojis in your dataset and present the first 10
+install.packages("devtools")
+library(devtools)
+devtools::install_github("hadley/emo")
+library(emo)
+ukraine_tweets %>%
+  mutate(emoji = ji_extract_all(text)) %>%
+  unnest(cols = c(emoji)) %>%
+  count(emoji, sort = TRUE) %>%
+  top_n(10) %>%
+  kable()
+##To identify the most frequent top 10 emoji we use ji_extract_all() function from the emo package
+#This function extracts all the tweets emojis
+#Than using the unnest() function from the tidyr package to split the emojis from its package and sort in desc order
+```
+
+```{r}
+# Identify top hashtags in your dataset and present the first 10
+library(tidytext)
+ukraine_tweets %>% 
+  unnest_tokens(hashtag, text, "tweets", to_lower = FALSE) %>%
+  filter(str_detect(hashtag, "^#"),
+        hashtag != "#ClimateEmergency") %>%
+  count(hashtag, sort = TRUE) %>%
+  top_n(10) %>%
+  kable()
+
+# To get the top 10 hashtags we must convert the text into 1 word per row using the unnest_tokens() to format
+# Than select the top 10 hashtags after the have been counted and view them in descending order
+```
+
+```{r}
+# Identify top mentions in your dataset and present the first 10
+ukraine_tweets %>% 
+  unnest_tokens(mentions, text, "tweets", to_lower = FALSE) %>%
+  filter(str_detect(mentions, "^@")) %>%  
+  count(mentions, sort = TRUE) %>%
+  top_n(10) %>%
+  kable()
+
+#Here what we will do is tokenise the text of every tweet and than use the function `str_detect()` from the package `tidyverse` to filter out words that start with an @ .
+```
+
+``` {r}
+# Get a list of all accounts that the top tweeter follows and present the first 5
+get_friends(
+  "TheAnswerYes",
+  n = 5) %>%
+  kable()
+```
+
+
+``` {r}
+# Get a list of followers of the top tweeter and present the first 5 
+get_followers(
+  "TheAnswerYes",
+  n = 5) %>%
+  kable()
+```
+
 
