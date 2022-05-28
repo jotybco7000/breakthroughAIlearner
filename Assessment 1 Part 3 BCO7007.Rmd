@@ -1,0 +1,137 @@
+---
+title: "Assessment 1 Part 3 BCO7007"
+author: "Joty Sekhon s4549414"
+date: '2022-05-22'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+``` {r}
+# Load the packages
+library(tidyverse)
+library(topicmodels)
+library(tidytext)
+library(ggplot2)
+library(dplyr)
+library(tm)
+library(wordcloud)
+library(quanteda)
+library(readtext)
+library(tidyr)
+library(reshape2)
+```
+
+``` {r}
+# Load the dataset
+ukraine <- read.csv("ukraine_7_10_2021.csv")
+
+# View structure of ukraine dataset
+str(ukraine)
+```
+
+``` {r}
+# Isolate text from ukraine dataset
+ukraine_text <- ukraine$text
+
+# Interpret our vector as a document (Source object)
+ukraine_source <- VectorSource(ukraine_text)
+
+# Create the corpus
+ukraine_corpus <- VCorpus(ukraine_source)
+
+# Clean and structure the unstructured document
+ukraine_corpus <- tm_map(ukraine_corpus, content_transformer(tolower))
+ukraine_corpus <- tm_map(ukraine_corpus, removeNumbers)
+ukraine_corpus <- tm_map(ukraine_corpus, removeWords, stopwords("english"))
+ukraine_corpus <- tm_map(ukraine_corpus, removePunctuation)
+ukraine_corpus <- tm_map(ukraine_corpus, stripWhitespace)
+
+# Create DocumentTermMatrix
+DTM <- DocumentTermMatrix(ukraine_corpus)
+```
+
+``` {r}
+# Create LDA model
+ukraine_lda <- LDA(DTM, k = 6, control = list (seed = 1234))
+
+ukraineplus_lda <- LDA(DTM, k = 7, control = list (seed = 1234))
+
+# Show the probability of words W associated with T topics
+ukraine_topics <- tidy(ukraine_lda, matrix = "beta")
+
+ukraineplus_topics <- tidy(ukraineplus_lda, matrix = "beta")
+
+# Grouping the words by topics
+ukraine_top_terms <- ukraine_topics %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+ukraineplus_top_terms <- ukraineplus_topics %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+```
+
+``` {r}
+# Display graph of words associated with topics
+ukraine_top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_y_reordered()
+
+ukraineplus_top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_y_reordered()
+
+
+ukraine_wide <- ukraine_topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  pivot_wider(names_from = topic, values_from = beta) %>%
+  filter(topic1 > .001 | topic2 > .001) %>%
+  mutate(log_ratio = log2(topic2 / topic1))
+
+ukraineplus_wide <- ukraineplus_topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  pivot_wider(names_from = topic, values_from = beta) %>%
+  filter(topic1 > .001 | topic2 > .001) %>%
+  mutate(log_ratio = log2(topic2 / topic1))
+```
+
+``` {r}
+# Visualise the top 10 words from each topic to brainstorm on possible topics that they cover.
+wordcloud(ukraine_corpus,
+          random.order = FALSE,
+          rot.per = 0.5,
+          scale = c(5,.6),
+          max.words = 10,
+          font.main = 1,
+          cex.main = 1.3)
+wordcloud
+```
+
+## Write 2-3 sentences comparing LDA models you generated with different number of topics. 
+##Explain which model you think best covers your data. 
+Comparing the LDA models It can be see there are great similarities with both 
+models despite the differences in number of topics (k). One model shows 6 graphs with 5 
+of the 6 illustrating Ukraine as the top used word. 
+While the other model showcased 5 out of the possible 7 plots with the top word 
+being ukraine. Thats why i believe the model with 6 topics best represents my data 
+as the search term for my dataset was indeed ukraine.
+
+## Come to a conclusion about the topics that your dataset presents.
+In conclusion it looks to be that ukraine was the top used word for my data
+and other words such as war, putin, russia and support are all top used words due to the 
+ongoing war the country is currently experiencing thus illustrating why these words are
+being used in correlation with ukraine.
+
