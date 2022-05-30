@@ -1,0 +1,193 @@
+# Assignment 2
+## *Joty Sekhon* | ## **s4549414**
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Part 2 Data Wrangling and Visualization
+``` {r}
+# Load packages
+library(tidyverse)
+library(knitr)
+library(skimr)
+library(dplyr)
+```
+
+### Import data
+``` {r}
+tg_meals <-read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-11-20/thanksgiving_meals.csv")
+```
+
+### 1. Display the first 10 rows of dataset using kable()
+``` {r}
+tg_meals %>%
+  head(10) %>%
+  kable()
+```
+
+### 2. Display summary of variables using skimr
+``` {r}
+tg_meals %>%
+  skim() %>%
+  kable()
+
+### Variables that may be useful to predict a families income based on their menu can be main_dish, cranberry, gravy, side 1-15, pie 1-13 and desert 1-12. Looking at the variables the more food a family provides during thanksgiving can be a possible method to predict a families income to be higher or lower based on how many variables (food) a family provides during thanksgiving. Meaning that a family with a higher income we can predict they will have more variables (food) in the dataset listed.
+
+### To predict a families community type and US_region based on their menu we can look at firstly the main_dish prepared and the main_prep as it can tell us about the community type and US_region of a family dependent on the dish they prefer.
+```
+
+### 3. Create a factor variable family_income using fct_reorder and parse_number
+``` {r}
+tg_meals <-tg_meals %>%
+mutate(family_income_1 = fct_reorder(family_income, parse_number(family_income)))
+```
+
+### 4. What is the number of people who celebrate?
+``` {r}
+tg_meals %>%
+filter(celebrate=="Yes") %>%
+count(celebrate)
+```
+
+### 5. What are categories and insights for each main dish served and the method it is prepared?
+``` {r}
+tg_meals %>%
+  count(main_dish, main_prep, sort = TRUE) %>%
+  filter(!is.na(main_dish) & !is.na(main_prep)) %>% 
+  kable()
+```
+
+### 6. Create 3 different data viz showing for main dish and method.
+``` {r}
+tg_meals %>%
+filter(main_prep == "Baked" | main_prep == "Fried" | main_prep == "Roasted") %>%
+ggplot(aes(main_dish, fill = main_dish)) + geom_bar() + facet_wrap(~main_prep) +
+theme_bw() +
+labs(title = "3 Visualisation Models",
+     x = "Main dish") +
+coord_flip()
+```
+
+### 7. How many families use cranberry vs gravy?
+``` {r}
+tg_meals %>%
+  filter(!is.na(cranberry) & cranberry!="None") %>%
+  count(cranberry) %>%
+  kable()
+
+tg_meals %>%
+  filter(!is.na(gravy) & gravy!= "No")%>%
+  count(gravy) %>%
+  kable()
+```
+
+### 8-9. What is the distribution of those who celebrate across income ranges. Create a data viz. Write 2-3 sentences with your explanation of each insight.
+```{r}
+tg_meals %>%
+  filter(celebrate == "Yes") %>%
+  ggplot(aes(family_income_1)) + 
+  geom_bar(aes(fill = family_income_1)) +
+  labs(title = "Distribution of families income that celebrated") +
+  coord_flip()
+```
+The distribution graph for families income range that celebrated Thanksgiving shows how 
+majority of the families over 150 families celebrating Thanksgiving had an income range between $25000-$49999.
+The other three income ranges which alot of families fell into was between $75000-$99999 and $50000-$74999 and also
+between $100000-$124999. Also the graph shows similarities with the amount of families that celebrated with the highest earning families over $17500 and families with the lowest income under $10000. Thus supposedly showcasing that there is not a relationship between income amount and celebrating Thanksgiving.
+
+
+### 10. 
+``` {r}
+new_tgmeals <- tg_meals %>% 
+  select(id, starts_with("side"),
+         starts_with("pie"),
+         starts_with("dessert")) %>%
+  select(-side15, -pie13, -dessert12) %>%
+  gather(type, value, -id) %>%
+  filter(!is.na(value),
+         !value %in% c("None", "Other (please specify)")) %>%
+  mutate(type = str_remove(type, "\\d+"))
+```
+
+The code creates a new dataset  with 3 variables id, Type and Value.
+The code created a new dataset using all the side variables in tg_meals and also all the pie and dessert
+variables in order to merge them into one new variable named type and its corresponding value without NA values meaning it will look at the item of food for the specific type of meal and will be display the results in the neighbouring variable named value.
+
+### 11-12. Intall package widyr and use pairwise_cor() function Write 2-3 sentences with your                explanation of what it does.
+```{r}
+install.packages("widyr")
+library(widyr)
+
+new_tgmeals %>%
+  pairwise_cor(value, id, sort = TRUE)
+```
+Find correlations of pairs of items in a column, based on a "feature" column that links them together. This is an example of the spread-operate-retidy pattern. What the code did is it used the value variable from the new dataset new_tgmeals and used it as the item which gets linked to the feature column which links the two items together in this case the feature column being the id variable. 
+
+The insight it shows is in the value column it had cookies and brownies in that column and shows how those pair 
+of items share a correlation with one another.
+
+
+### 10. Use lm()function to build a model that predict a family income based on data in the dataset
+```{r}
+tg_meals2 <- tg_meals %>%
+  mutate(family_income_1 = parse_number(family_income)) %>%
+  filter(!is.na(family_income_1) & !is.na(family_income))
+
+
+l_model1 <- lm(family_income_1~age, data = tg_meals2)
+l_model2 <- lm(family_income_1~kids_table_age, data = tg_meals2)
+l_model3 <- lm(family_income_1~community_type, data = tg_meals2)
+
+
+summary(l_model1)
+summary(l_model2)
+summary(l_model3)
+
+tg_meals2 %>%
+  ggplot(aes(age, family_income_1)) +
+           geom_point(size = 5, colour = "red") +
+  geom_smooth(method = "lm") +
+  labs(title = "Predict family income",
+       x = "Age",
+       y = "Family income") +
+           theme_bw() 
+
+tg_meals2 %>%
+  ggplot(aes(kids_table_age, family_income_1)) +
+           geom_point(size = 5, colour = "red") +
+  geom_smooth(method = "lm") +
+  labs(title = "Predict family income",
+       x = "Kids Ages",
+       y = "Family income") +
+           theme_bw() 
+
+
+ tg_meals2 %>%
+  ggplot(aes(community_type, family_income_1)) +
+           geom_point(size = 5, colour = "red") +
+  geom_smooth(method = "lm") +
+  labs(title = "Predict family income",
+       x = "Community Type",
+       y = "Family income") +
+           theme_bw() 
+
+```
+
+It looks to me that the lm model which predicts family income using the input variable 
+age is the most correct in my opinion. This is because the model shows that ad thr family gets
+older the income increases which is what we would expect in normal circumstances and that once the families
+reaches retirement age the income declines from its peak suggesting to me it is the best 
+model to predict family income.
+
+
+
+
+  
+
+
+
+
+
+
